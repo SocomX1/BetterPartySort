@@ -13,11 +13,11 @@ namespace SamplePlugin;
 
 public sealed class Plugin : IDalamudPlugin {
     private const string CommandName = "/pmycommand";
-    private const string DebugCommandName = "/sortdata";
+    private const string SortCommandName = "/bsort";
 
     public Configuration Configuration { get; init; }
 
-    public readonly WindowSystem WindowSystem = new("SamplePlugin");
+    public readonly WindowSystem WindowSystem = new("BetterPartySort");
     private ConfigWindow ConfigWindow { get; init; }
     private MainWindow MainWindow { get; init; }
 
@@ -40,7 +40,7 @@ public sealed class Plugin : IDalamudPlugin {
             HelpMessage = "A useful message to display in /xlhelp"
         });
 
-        Dalamud.CommandManager.AddHandler(DebugCommandName, new CommandInfo(OnDebugCommand) {
+        Dalamud.CommandManager.AddHandler(SortCommandName, new CommandInfo(OnDebugCommand) {
             HelpMessage = "Output party and sort order values to console"
         });
 
