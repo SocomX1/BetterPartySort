@@ -1,13 +1,18 @@
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+
 namespace BetterPartySort;
 
 public class PartyConfiguration {
-    private string configurationName;
-    private string configurationDescription;
+    public string ConfigurationName { get; set; }
+    public string ConfigurationDescription { get; set; }
+
+    [JsonProperty(ItemConverterType = typeof(StringEnumConverter))]
     private readonly PartyRole[] sortOrder;
 
     public PartyConfiguration(string configurationName, string configurationDescription, PartyRole[] sortOrder) {
-        this.configurationName = configurationName;
-        this.configurationDescription = configurationDescription;
+        this.ConfigurationName = configurationName;
+        this.ConfigurationDescription = configurationDescription;
         this.sortOrder = sortOrder;
     }
 

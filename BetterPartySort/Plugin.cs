@@ -6,6 +6,7 @@ using Dalamud.Game.Command;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin;
 using FFXIVClientStructs.FFXIV.Client.System.String;
+using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Shell;
 
@@ -21,7 +22,7 @@ public sealed class Plugin : IDalamudPlugin {
     private ConfigWindow ConfigWindow { get; init; }
     private MainWindow MainWindow { get; init; }
 
-    private Dictionary<PartyRole, uint> partyDict;
+    public Dictionary<PartyRole, uint> partyDict;
 
     public Plugin(IDalamudPluginInterface pluginInterface) {
         pluginInterface.Create<Dalamud>();
@@ -40,8 +41,8 @@ public sealed class Plugin : IDalamudPlugin {
             HelpMessage = "A useful message to display in /xlhelp"
         });
 
-        Dalamud.CommandManager.AddHandler(SortCommandName, new CommandInfo(OnDebugCommand) {
-            HelpMessage = "Output party and sort order values to console"
+        Dalamud.CommandManager.AddHandler(SortCommandName, new CommandInfo(OnSortCommand) {
+            HelpMessage = "Sort the party list according to the specified configuration"
         });
 
         Dalamud.CommandManager.AddHandler("/assign", new CommandInfo(OnRoleCommand) {
@@ -72,10 +73,24 @@ public sealed class Plugin : IDalamudPlugin {
     private void OnCommand(string command, string args) {
         // in response to the slash command, just toggle the display status of our main ui
         ToggleMainUI();
+        Dalamud.Log(Configuration.SomePropertyToBeSavedAndWithADefault.ToString());
     }
 
-    private unsafe void OnDebugCommand(string command, string args) {
-        sortParty();
+    private unsafe void OnSortCommand(string command, string args) {
+        //SortParty(int.Parse(args));
+        foreach (var order in Configuration.PartyConfigurations) {
+            Dalamud.Log("\n" + order.ConfigurationName);
+            for (int i = 0; i < 8; i++) {
+                Dalamud.Log(order.GetRoleByIndex(i).ToString());
+            }
+        }
+
+        var party = AgentHUD.Instance()->PartyMembers;
+        for (int i = 0; i < party.Length; i++) {
+            if (party[i].Object != null) {
+                Dalamud.Log(party[i].Object->ClassJob + ", " + party[i].Object->NameString);
+            }
+        }
     }
 
     private unsafe void OnRoleCommand(string command, string args) {
@@ -85,13 +100,10 @@ public sealed class Plugin : IDalamudPlugin {
     }
 
 
-    private unsafe void sortParty() {
+    private unsafe void SortParty(int sortConfigIndex = 0) {
         var partyList = AgentHUD.Instance()->PartyMembers;
 
-        PartyConfiguration partyConfig = new PartyConfiguration("Light parties", "LP1->LP2", [
-            PartyRole.Tank1, PartyRole.Healer1, PartyRole.Melee1, PartyRole.Ranged1,
-            PartyRole.Tank2, PartyRole.Healer2, PartyRole.Melee2, PartyRole.Ranged2
-        ]);
+        PartyConfiguration partyConfig = Configuration.PartyConfigurations[sortConfigIndex];
 
         for (int i = 0; i < partyList.Length; i++) {
             Dalamud.Log(i + ": " + partyList[i].EntityId + ", " + partyList[i].Index);
@@ -103,12 +115,14 @@ public sealed class Plugin : IDalamudPlugin {
             var targetIndex = SortUtility.GetIndexByEntityId(id);
             string sortParams = "/psort " + (i + 1) + " " + (targetIndex + 1);
 
-            Dalamud.Log(sortParams + ": " + role + ", " + id + ", " + targetIndex);
 
-            SortUtility.UpdatePartyMemberIndex((byte)i, targetIndex);
-            if (i != targetIndex)
+            if (i != targetIndex) {
+                Dalamud.Log(sortParams + ": " + role + ", " + id + ", " + targetIndex);
+                SortUtility.UpdatePartyMemberIndex((byte)i, targetIndex);
+
                 RaptureShellModule.Instance()->ShellCommandModule.ExecuteCommandInner(
                     Utf8String.FromString(sortParams), RaptureShellModule.Instance()->UIModule);
+            }
         }
     }
 
