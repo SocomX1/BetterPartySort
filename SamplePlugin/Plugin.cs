@@ -1,21 +1,14 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
-using System.Text;
-using Dalamud.Game.Addon.Lifecycle;
-using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Game.Command;
-using Dalamud.Game.Config;
-using Dalamud.Interface.Internal.Windows.Data.Widgets;
 using Dalamud.Interface.Windowing;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
-using Dalamud.Utility;
-using FFXIVClientStructs.FFXIV.Client.Game.Group;
-using FFXIVClientStructs.FFXIV.Client.System.Framework;
-using FFXIVClientStructs.FFXIV.Client.UI;
+using FFXIVClientStructs.FFXIV.Client.System.String;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
-using FFXIVClientStructs.FFXIV.Component.GUI;
+using FFXIVClientStructs.FFXIV.Client.UI.Shell;
 using SamplePlugin.Windows;
 
 namespace SamplePlugin;
@@ -38,10 +31,16 @@ public sealed class Plugin : IDalamudPlugin
     internal static IGameConfig GameConfig { get; private set; } = null!;
 
     [PluginService]
+    internal static IAddonEventManager AddonManager { get; private set; } = null!;
+
+    [PluginService]
     internal static IPluginLog PluginLog { get; private set; } = null!;
 
     [PluginService]
     internal static IAddonLifecycle AddonLifecycle { get; private set; } = null!;
+
+    [PluginService]
+    internal static IObjectTable ObjectTable { get; private set; } = null!;
 
     private const string CommandName = "/pmycommand";
     private const string DebugCommandName = "/sortdata";
@@ -51,6 +50,8 @@ public sealed class Plugin : IDalamudPlugin
     public readonly WindowSystem WindowSystem = new("SamplePlugin");
     private ConfigWindow ConfigWindow { get; init; }
     private MainWindow MainWindow { get; init; }
+
+    private Dictionary<PartyRole, uint> partyDict;
 
     public Plugin()
     {
@@ -75,6 +76,11 @@ public sealed class Plugin : IDalamudPlugin
             HelpMessage = "Output party and sort order values to console"
         });
 
+        CommandManager.AddHandler("/assign", new CommandInfo(OnRoleCommand)
+        {
+            HelpMessage = "designate party member role"
+        });
+
         PluginInterface.UiBuilder.Draw += DrawUI;
 
         // This adds a button to the plugin installer entry of this plugin which allows
@@ -83,77 +89,10 @@ public sealed class Plugin : IDalamudPlugin
 
         // Adds another button that is doing the same but for the main ui of the plugin
         PluginInterface.UiBuilder.OpenMainUi += ToggleMainUI;
-
-        AddonLifecycle.RegisterListener(AddonEvent.PreRequestedUpdate, "_PartyList", OnPreRequestUpdate);
+        
+        partyDict = new Dictionary<PartyRole, uint>(8);
     }
-
-    private unsafe void debug()
-    {
-        // foreach (var partyMember in AgentHUD.Instance()->PartyMembers)
-        // {
-        //     PluginLog.Info(partyMember.Index + ":");
-        // }
-        //
-        // var char1 = AgentHUD.Instance()->PartyMembers[0];
-        // var char2 = AgentHUD.Instance()->PartyMembers[1];
-        //
-        // AgentHUD.Instance()->PartyMembers[0] = char2;
-        // AgentHUD.Instance()->PartyMembers[1] = char1;
-
-
-        // var partyManager = GroupManager.Instance()->MainGroup;
-
-        // PluginLog.Info(PartyList.Length + " party members");
-        // PluginLog.Info(PartyList.PartyId.ToString());
-
-        // PluginLog.Info(partyManager.PartyId + " id");
-
-        // foreach (var partyMember in partyManager.PartyMembers)
-        // {
-        //     PluginLog.Info(partyMember.NameString);
-        // }
-
-        // PluginLog.Info(partyManager.PartyMembers[0].NameString);
-        // PluginLog.Info(partyManager.PartyMembers[1].NameString);
-
-        // var char1 = partyManager.PartyMembers[0];
-        // var char2 = partyManager.PartyMembers[1];
-        // partyManager.PartyMembers[0] = char2;
-        // partyManager.PartyMembers[1] = char1;
-
-
-        // var uiConfigSection = GameConfig.UiConfig;
-        // var dpsOrder =
-        //     uiConfigSection.GetUInt(UiConfigOption.PartyListSortTypeDps.GetAttribute<GameConfigOptionAttribute>().Name);
-        // GameConfig.TryGet(UiConfigOption.PartyListSortTypeDps, out UIntConfigProperties? configProperties);
-
-        // GameConfig.Changed += LogUIChange;
-
-        // PluginLog.Info(configProperties.ToString());
-
-        // var partyList = Framework.Instance()->GetUIModule()->GetRaptureUiDataModule()->PartyListHealerOrder;
-        // foreach (var job in partyList)
-        // {
-        //     PluginLog.Info(job.ToString());   
-        // }
-
-        // var partyList =
-        //     (AddonPartyList*)Framework.Instance()->GetUIModule()->GetRaptureAtkModule()->AtkUnitManager->GetAddonByName(
-        //         "_PartyList");
-        // var party = partyList->TrustMembers;
-        // var char1 = party[5];
-        // var char2 = party[6];
-        // party[6] = char1;
-        // party[5] = char2;
-        // PluginLog.Info(partyList->TrustCount.ToString());
-    }
-
-    private void OnPreRequestUpdate(AddonEvent eventType, AddonArgs args)
-    {
-        var numericArgs = ((AddonRequestedUpdateArgs)args).NumberArrayData;
-        var stringArgs = ((AddonRequestedUpdateArgs)args).StringArrayData;
-    }
-
+    
     public void Dispose()
     {
         WindowSystem.RemoveAllWindows();
@@ -170,29 +109,48 @@ public sealed class Plugin : IDalamudPlugin
         ToggleMainUI();
     }
 
-    private void OnDebugCommand(string command, string args)
+    private unsafe void OnDebugCommand(string command, string args)
     {
-        string[] strings = args.Split(' ');
-        swapPartyMembers(Convert.ToInt32(strings[0]), Convert.ToInt32(strings[1]));
+        sortParty();
     }
 
-    private unsafe void swapPartyMembers(int index1, int index2)
+    private unsafe void OnRoleCommand(string command, string args)
     {
-        var partyList =
-            (AddonPartyList*)Framework.Instance()->GetUIModule()->GetRaptureAtkModule()->AtkUnitManager->GetAddonByName(
-                "_PartyList");
-        var party = partyList->TrustMembers;
-        var char1 = party[index1];
-        var char2 = party[index2];
-        party[index1] = char2;
-        party[index2] = char1;
+        PluginLog.Info(AgentHUD.Instance()->CurrentTargetId.ToString());
+        Enum.TryParse(args, out PartyRole role);
+        partyDict.Add(role, AgentHUD.Instance()->CurrentTargetId);
     }
 
-    // public void LogUIChange(object? sender, ConfigChangeEvent e)
-    // {
-    //     PluginLog.Info(sender.ToString());
-    //     PluginLog.Info(e.ToString());
-    // }
+
+    private unsafe void sortParty()
+    {
+        var partyList = AgentHUD.Instance()->PartyMembers;
+
+        PartyConfiguration partyConfig = new PartyConfiguration("Light parties", "LP1->LP2", [
+            PartyRole.Tank1, PartyRole.Healer1, PartyRole.Melee1, PartyRole.Ranged1,
+            PartyRole.Tank2, PartyRole.Healer2, PartyRole.Melee2, PartyRole.Ranged2
+        ]);
+
+        for (int i = 0; i < partyList.Length; i++)
+        {
+            PluginLog.Info(i + ": " + partyList[i].EntityId + ", " + partyList[i].Index);
+        }
+
+        for (int i = 0; i < 8; i++)
+        {
+            var role = partyConfig.sortOrder[i];
+            var id = partyDict[role];
+            var targetIndex = SortUtility.GetIndexByEntityId(id);
+            string sortParams = "/psort " + (i + 1) + " " + (targetIndex + 1);
+
+            PluginLog.Info(sortParams + ": " + role + ", " + id + ", " + targetIndex);
+
+            SortUtility.UpdatePartyMemberIndex((byte)i, targetIndex);
+            if (i != targetIndex)
+                RaptureShellModule.Instance()->ShellCommandModule.ExecuteCommandInner(
+                    Utf8String.FromString(sortParams), RaptureShellModule.Instance()->UIModule);
+        }
+    }
 
     private void DrawUI() => WindowSystem.Draw();
 
