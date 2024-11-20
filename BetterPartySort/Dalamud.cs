@@ -2,7 +2,7 @@ using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 
-namespace SamplePlugin;
+namespace BetterPartySort;
 
 public class Dalamud {
     [PluginService]

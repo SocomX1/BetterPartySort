@@ -1,15 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using BetterPartySort.Windows;
 using Dalamud.Game.Command;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin;
 using FFXIVClientStructs.FFXIV.Client.System.String;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Shell;
-using SamplePlugin.Windows;
 
-namespace SamplePlugin;
+namespace BetterPartySort;
 
 public sealed class Plugin : IDalamudPlugin {
     private const string CommandName = "/pmycommand";

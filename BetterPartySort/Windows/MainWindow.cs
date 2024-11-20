@@ -6,7 +6,7 @@ using Dalamud.Interface.Windowing;
 using Dalamud.Plugin.Services;
 using ImGuiNET;
 
-namespace SamplePlugin.Windows;
+namespace BetterPartySort.Windows;
 
 public class MainWindow : Window, IDisposable {
     private string GoatImagePath;

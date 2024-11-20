@@ -1,4 +1,4 @@
-namespace SamplePlugin;
+namespace BetterPartySort;
 
 public class PartyConfiguration {
     private string configurationName;

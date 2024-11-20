@@ -1,4 +1,4 @@
-namespace SamplePlugin;
+namespace BetterPartySort;
 
 public enum PartyRole {
     Tank1,

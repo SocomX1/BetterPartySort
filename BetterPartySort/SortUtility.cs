@@ -1,6 +1,6 @@
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 
-namespace SamplePlugin;
+namespace BetterPartySort;
 
 public static class SortUtility {
     public static unsafe byte GetIndexByEntityId(uint entityId) {
@@ -14,7 +14,7 @@ public static class SortUtility {
         return 0;
     }
 
-    public static unsafe void UpdatePartyMemberIndex(byte originalIndex, int newIndex) {
+    public static unsafe void UpdatePartyMemberIndex(int originalIndex, int newIndex) {
         var partyList = AgentHUD.Instance()->PartyMembers;
         for (int i = 0; i < partyList.Length; i++) {
             if (partyList[i].Index == originalIndex) {
