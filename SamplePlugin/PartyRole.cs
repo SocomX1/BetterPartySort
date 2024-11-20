@@ -1,7 +1,6 @@
 namespace SamplePlugin;
 
-public enum PartyRole
-{
+public enum PartyRole {
     Tank1,
     Tank2,
     Healer1,
