@@ -26,6 +26,8 @@ public sealed class Plugin : IDalamudPlugin {
     public Dictionary<PartyRole, uint> partyDict;
 
     public SortManager SortManager;
+    public PartyManager PartyManager;
+    public int selectElement;
 
     public Plugin(IDalamudPluginInterface pluginInterface) {
         pluginInterface.Create<Dalamud>();
@@ -63,6 +65,7 @@ public sealed class Plugin : IDalamudPlugin {
 
         partyDict = new Dictionary<PartyRole, uint>(8);
         SortManager = new SortManager(this);
+        PartyManager = new PartyManager();
         // Dalamud.ClientState.TerritoryChanged += OnTerritoryChange;
     }
 
@@ -89,7 +92,6 @@ public sealed class Plugin : IDalamudPlugin {
     }
 
     private void OnSortCommand(string command, string args) {
-        //SortManager.PopulatePartyMembers();
         SortManager.SortParty(int.Parse(args));
 
         foreach (var order in Configuration.PartyConfigurations) {

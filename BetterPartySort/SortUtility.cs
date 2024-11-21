@@ -1,16 +1,11 @@
+using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 
 namespace BetterPartySort;
 
 public static class SortUtility {
-    public enum JobType {
-        Tank,
-        Healer,
-        Melee,
-        Ranged
-    }
-
     //kill me
     public static readonly Dictionary<byte, JobType> JobTypeDict = new() {
         { 1, JobType.Tank },
@@ -46,6 +41,11 @@ public static class SortUtility {
         { 42, JobType.Ranged }
     };
 
+    public static JobType GetJobTypeFromRole(PartyRole role) {
+        Enum.TryParse(Regex.Replace(role.ToString(), @"[\d-]", string.Empty), out JobType type);
+        return type;
+    }
+
     public static unsafe byte GetIndexByEntityId(uint entityId) {
         var partyList = AgentHUD.Instance()->PartyMembers;
         foreach (var partyMember in partyList) {
@@ -56,7 +56,7 @@ public static class SortUtility {
 
         return 0;
     }
-    
+
     public static unsafe void UpdatePartyMemberIndex(byte originalIndex, byte newIndex) {
         var partyList = AgentHUD.Instance()->PartyMembers;
         for (int i = 0; i < partyList.Length; i++) {

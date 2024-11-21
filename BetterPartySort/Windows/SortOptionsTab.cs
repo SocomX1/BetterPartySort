@@ -1,114 +1,63 @@
+using System;
 using System.Collections.Generic;
+using FFXIVClientStructs.FFXIV.Common.Lua;
 using ImGuiNET;
 
 namespace BetterPartySort.Windows;
 
 public class SortOptionsTab {
     private readonly Plugin plugin;
-    private Dictionary<int, string> roleDictionary;
+    private Configuration config;
 
     public SortOptionsTab(Plugin plugin) {
         this.plugin = plugin;
-        roleDictionary = [this.plugin.Configuration.Tank1Index, "Tank 1"];
+        config = plugin.Configuration;
     }
 
-    
-    public void Draw() {
-        plugin.SortManager.PopulatePartyMembers();
-        var partyMembers = plugin.SortManager.PartyMembers;
-
-        var tanks = partyMembers.FindAll(partyMember => partyMember.JobType == SortUtility.JobType.Tank);
-        var healers = partyMembers.FindAll(partyMember => partyMember.JobType == SortUtility.JobType.Healer);
-        var melee = partyMembers.FindAll(partyMember => partyMember.JobType == SortUtility.JobType.Melee);
-        var ranged = partyMembers.FindAll(partyMember => partyMember.JobType == SortUtility.JobType.Ranged);
-
-        var value = plugin.Configuration.Tank1Index;
-        if (ImGui.Combo("Tank 1", ref value, tanks.ConvertAll(partyMember => partyMember.Name).ToArray(),
-                        tanks.Count)) {
-            plugin.Configuration.Tank1Index = value;
-            plugin.Configuration.Tank2Index = value == 0 ? 1 : 0;
-            plugin.Configuration.Save();
-
-            var index = plugin.SortManager.PartyMembers.IndexOf(tanks[value]);
-            Dalamud.Log();
-            plugin.SortManager.PartyMembers[index].Role = PartyRole.Tank1;
+    public unsafe void Draw() {
+        if (plugin.PartyManager.party.Count != 8) {
+            plugin.SortManager.PopulatePartyMembers();
         }
 
-        value = plugin.Configuration.Tank2Index;
-        if (ImGui.Combo("Tank 2", ref value, tanks.ConvertAll(partyMember => partyMember.Name).ToArray(),
-                        tanks.Count)) {
-            plugin.Configuration.Tank2Index = value;
-            plugin.Configuration.Tank1Index = value == 0 ? 1 : 0;
-            plugin.Configuration.Save();
+        for (int i = 0; i < 4; i++) {
+            var lightParty = plugin.PartyManager.LightParties[0];
 
-            var index = plugin.SortManager.PartyMembers.IndexOf(tanks[value]);
-            Dalamud.Log(index.ToString());
-            plugin.SortManager.PartyMembers[index].Role = PartyRole.Tank2;
+            var role = SortManager.roles[i];
+            var playersOfJob = plugin.PartyManager.GetPlayersOfJobType(role.type);
+            var playerNames = playersOfJob.ConvertAll(player => player.Name);
+
+            var value = lightParty.PartyIndexDict[role.type];
+
+            if (ImGui.Combo(role.name, ref value, playerNames.ToArray(), playerNames.Count)) {
+                var previousValue = lightParty.PartyIndexDict[role.type];
+                lightParty.PartyIndexDict[role.type] = value;
+                if (previousValue != value) {
+                    lightParty.UnregisterLightPartyMember(
+                        playersOfJob.Find(player => player.Name == playerNames[previousValue]));
+                    lightParty.RegisterLightPartyMember(playersOfJob.Find(player => player.Name == playerNames[value]));
+                }
+            }
         }
 
-        value = plugin.Configuration.Healer1Index;
-        if (ImGui.Combo("Healer 1", ref value, healers.ConvertAll(partyMember => partyMember.Name).ToArray(),
-                        healers.Count)) {
-            plugin.Configuration.Healer1Index = value;
-            plugin.Configuration.Healer2Index = value == 0 ? 1 : 0;
-            plugin.Configuration.Save();
+        ImGui.Separator();
 
-            healers[value].Role = PartyRole.Healer1;
-        }
+        for (int i = 4; i < 8; i++) {
+            var lightParty = plugin.PartyManager.LightParties[1];
+            var role = SortManager.roles[i];
+            var playersOfJob = plugin.PartyManager.GetPlayersOfJobType(role.type);
+            var playerNames = playersOfJob.ConvertAll(player => player.Name);
 
-        value = plugin.Configuration.Healer2Index;
+            var value = lightParty.PartyIndexDict[role.type];
 
-        if (ImGui.Combo("Healer 2", ref value, healers.ConvertAll(partyMember => partyMember.Name).ToArray(),
-                        healers.Count)) {
-            plugin.Configuration.Healer2Index = value;
-            plugin.Configuration.Healer1Index = value == 0 ? 1 : 0;
-            plugin.Configuration.Save();
-
-            healers[value].Role = PartyRole.Healer2;
-        }
-
-        value = plugin.Configuration.Melee1Index;
-
-        if (ImGui.Combo("Melee 1", ref value, melee.ConvertAll(partyMember => partyMember.Name).ToArray(),
-                        melee.Count)) {
-            plugin.Configuration.Melee1Index = value;
-            plugin.Configuration.Melee2Index = value == 0 ? 1 : 0;
-            plugin.Configuration.Save();
-
-            melee[value].Role = PartyRole.Melee1;
-        }
-
-        value = plugin.Configuration.Melee2Index;
-
-        if (ImGui.Combo("Melee 2", ref value, melee.ConvertAll(partyMember => partyMember.Name).ToArray(),
-                        melee.Count)) {
-            plugin.Configuration.Melee2Index = value;
-            plugin.Configuration.Melee1Index = value == 0 ? 1 : 0;
-            plugin.Configuration.Save();
-
-            melee[value].Role = PartyRole.Melee2;
-        }
-
-        value = plugin.Configuration.Ranged1Index;
-
-        if (ImGui.Combo("Ranged 1", ref value, ranged.ConvertAll(partyMember => partyMember.Name).ToArray(),
-                        ranged.Count)) {
-            plugin.Configuration.Ranged1Index = value;
-            plugin.Configuration.Ranged2Index = value == 0 ? 1 : 0;
-            plugin.Configuration.Save();
-
-            ranged[value].Role = PartyRole.Ranged1;
-        }
-
-        value = plugin.Configuration.Ranged2Index;
-
-        if (ImGui.Combo("Ranged 2", ref value, ranged.ConvertAll(partyMember => partyMember.Name).ToArray(),
-                        ranged.Count)) {
-            plugin.Configuration.Ranged2Index = value;
-            plugin.Configuration.Ranged1Index = value == 0 ? 1 : 0;
-            plugin.Configuration.Save();
-
-            ranged[value].Role = PartyRole.Ranged2;
+            if (ImGui.Combo(role.name, ref value, playerNames.ToArray(), playerNames.Count)) {
+                var previousValue = lightParty.PartyIndexDict[role.type];
+                lightParty.PartyIndexDict[role.type] = value;
+                if (previousValue != value) {
+                    lightParty.UnregisterLightPartyMember(
+                        playersOfJob.Find(player => player.Name == playerNames[previousValue]));
+                    lightParty.RegisterLightPartyMember(playersOfJob.Find(player => player.Name == playerNames[value]));
+                }
+            }
         }
     }
 }
