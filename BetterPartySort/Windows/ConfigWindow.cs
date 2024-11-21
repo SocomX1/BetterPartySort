@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Numerics;
+using BetterPartySort.Config;
 using Dalamud.Interface.Windowing;
 using ImGuiNET;
 

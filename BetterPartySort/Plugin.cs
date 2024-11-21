@@ -1,20 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
+﻿using System.IO;
+using BetterPartySort.Config;
+using BetterPartySort.Party;
 using BetterPartySort.Windows;
 using Dalamud.Game.Command;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin;
-using FFXIVClientStructs.FFXIV.Client.System.String;
-using FFXIVClientStructs.FFXIV.Client.UI;
-using FFXIVClientStructs.FFXIV.Client.UI.Agent;
-using FFXIVClientStructs.FFXIV.Client.UI.Shell;
-using Lumina.Excel.Sheets;
 
 namespace BetterPartySort;
 
 public sealed class Plugin : IDalamudPlugin {
-    private const string CommandName = "/pmycommand";
+    private const string CommandName = "/bps";
     private const string SortCommandName = "/bsort";
 
     public Configuration Configuration { get; init; }
@@ -22,12 +17,9 @@ public sealed class Plugin : IDalamudPlugin {
     public readonly WindowSystem WindowSystem = new("BetterPartySort");
     private ConfigWindow ConfigWindow { get; init; }
     private MainWindow MainWindow { get; init; }
-
-    public Dictionary<PartyRole, uint> partyDict;
-
-    public SortManager SortManager;
-    public PartyManager PartyManager;
-    public int selectElement;
+    
+    public readonly SortManager SortManager;
+    public readonly PartyManager PartyManager;
 
     public Plugin(IDalamudPluginInterface pluginInterface) {
         pluginInterface.Create<Dalamud>();
@@ -43,15 +35,11 @@ public sealed class Plugin : IDalamudPlugin {
         WindowSystem.AddWindow(MainWindow);
 
         Dalamud.CommandManager.AddHandler(CommandName, new CommandInfo(OnCommand) {
-            HelpMessage = "A useful message to display in /xlhelp"
+            HelpMessage = "Open the BetterPartySort menu."
         });
 
         Dalamud.CommandManager.AddHandler(SortCommandName, new CommandInfo(OnSortCommand) {
-            HelpMessage = "Sort the party list according to the specified configuration"
-        });
-
-        Dalamud.CommandManager.AddHandler("/assign", new CommandInfo(OnRoleCommand) {
-            HelpMessage = "designate party member role"
+            HelpMessage = "Sort the party list according to the specified configuration."
         });
 
         Dalamud.PluginInterface.UiBuilder.Draw += DrawUI;
@@ -63,17 +51,9 @@ public sealed class Plugin : IDalamudPlugin {
         // Adds another button that is doing the same but for the main ui of the plugin
         Dalamud.PluginInterface.UiBuilder.OpenMainUi += ToggleMainUI;
 
-        partyDict = new Dictionary<PartyRole, uint>(8);
         SortManager = new SortManager(this);
         PartyManager = new PartyManager();
-        // Dalamud.ClientState.TerritoryChanged += OnTerritoryChange;
     }
-
-    // private unsafe void OnTerritoryChange(ushort territoryId) {
-    //     Dalamud.Log(AgentHUD.Instance()->PartyMemberCount.ToString());
-    //     if(AgentHUD.Instance()->PartyMembers.Length == 8)
-    //         Dalamud.Log(8 + " party members");
-    // }
 
     public void Dispose() {
         WindowSystem.RemoveAllWindows();
@@ -82,13 +62,11 @@ public sealed class Plugin : IDalamudPlugin {
         MainWindow.Dispose();
 
         Dalamud.CommandManager.RemoveHandler(CommandName);
-        // Dalamud.ClientState.TerritoryChanged -= OnTerritoryChange;
+        Dalamud.CommandManager.RemoveHandler(SortCommandName);
     }
 
     private void OnCommand(string command, string args) {
-        // in response to the slash command, just toggle the display status of our main ui
         ToggleMainUI();
-        Dalamud.Log(Configuration.SomePropertyToBeSavedAndWithADefault.ToString());
     }
 
     private void OnSortCommand(string command, string args) {
@@ -101,13 +79,6 @@ public sealed class Plugin : IDalamudPlugin {
             }
         }
     }
-
-    private unsafe void OnRoleCommand(string command, string args) {
-        Dalamud.Log(AgentHUD.Instance()->CurrentTargetId.ToString());
-        Enum.TryParse(args, out PartyRole role);
-        partyDict.Add(role, AgentHUD.Instance()->CurrentTargetId);
-    }
-
 
     private void DrawUI() => WindowSystem.Draw();
 

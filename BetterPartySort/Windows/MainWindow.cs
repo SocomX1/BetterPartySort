@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Numerics;
-using Dalamud.Interface.Internal;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Windowing;
-using Dalamud.Plugin.Services;
 using ImGuiNET;
 
 namespace BetterPartySort.Windows;

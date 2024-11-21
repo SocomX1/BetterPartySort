@@ -1,8 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
+using BetterPartySort.Party;
 using Dalamud.Configuration;
 
-namespace BetterPartySort;
+namespace BetterPartySort.Config;
 
 [Serializable]
 public class Configuration : IPluginConfiguration {
@@ -10,18 +10,6 @@ public class Configuration : IPluginConfiguration {
 
     public bool IsConfigWindowMovable { get; set; } = true;
     public bool SomePropertyToBeSavedAndWithADefault { get; set; } = true;
-
-    public int Tank1Index { get; set; } = 0;
-    public int Tank2Index { get; set; } = 1;
-
-    public int Healer1Index { get; set; } = 0;
-    public int Healer2Index { get; set; } = 1;
-
-    public int Melee1Index { get; set; } = 0;
-    public int Melee2Index { get; set; } = 1;
-
-    public int Ranged1Index { get; set; } = 0;
-    public int Ranged2Index { get; set; } = 1;
 
     public PartyConfiguration[] PartyConfigurations { get; set; } = [
         new("Light parties", "THMRTHMR", [

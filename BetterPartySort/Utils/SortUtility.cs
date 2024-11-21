@@ -1,9 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using BetterPartySort.Party;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 
-namespace BetterPartySort;
+namespace BetterPartySort.Utils;
 
 public static class SortUtility {
     //kill me
