@@ -15,6 +15,8 @@ public class SortManager {
     }
 
     public unsafe void SortParty(int sortConfigIndex = 0) {
+        plugin.PartyManager.PopulatePartyMembers();
+
         PartyConfiguration partyConfig = configuration.PartyConfigurations[sortConfigIndex];
 
         for (int i = 0; i < 8; i++) {

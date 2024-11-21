@@ -14,32 +14,68 @@ public class PartyManager {
         LightParties = [new LightParty(this), new LightParty(this)];
     }
 
+    public void InitParty() {
+        party.Clear();
+
+        foreach (var lightParty in LightParties) {
+            lightParty.InitLightParty();
+        }
+
+        PopulatePartyMembers();
+    }
+
+    public unsafe bool ValidatePartyComposition() {
+        if (AgentHUD.Instance()->PartyMemberCount != 8)
+            return false;
+
+        if (GetHudPlayersOfJobTypeCount(JobType.Tank) != 2)
+            return false;
+
+        if (GetHudPlayersOfJobTypeCount(JobType.Healer) != 2)
+            return false;
+
+        if (GetHudPlayersOfJobTypeCount(JobType.Melee) < 1)
+            return false;
+
+        if (GetHudPlayersOfJobTypeCount(JobType.Ranged) < 1)
+            return false;
+
+        return true;
+    }
+
     public unsafe void PopulatePartyMembers() {
         var partyHud = AgentHUD.Instance()->PartyMembers;
+
         foreach (var player in partyHud) {
             if (player.Object != null) {
-                RegisterPartyMember(player);
+                var newMember = new PartyMember(player);
+
+                if (!party.Contains(newMember)) {
+                    RegisterPartyMember(newMember);
+                }
             }
         }
     }
 
-    public unsafe void RegisterPartyMember(HudPartyMember hudPartyMember) {
-        if (hudPartyMember.Object != null) {
-            PartyMember newMember = new PartyMember(hudPartyMember);
-            party.Add(newMember);
-            if (!LightParties[0].Players.Exists(existingMember => existingMember.JobType == newMember.JobType)) {
-                Dalamud.Log(newMember.Name + " is registered for light party 1");
-                LightParties[0].RegisterLightPartyMember(newMember);
-            }
-            else {
-                Dalamud.Log(newMember.Name + " is registered for light party 2");
-                LightParties[1].RegisterLightPartyMember(newMember);
-            }
+    public void RegisterPartyMember(PartyMember partyMember) {
+        party.Add(partyMember);
+        if (!LightParties[0].Players.Exists(existingMember => existingMember.JobType == partyMember.JobType)) {
+            LightParties[0].RegisterLightPartyMember(partyMember);
+        }
+        else {
+            LightParties[1].RegisterLightPartyMember(partyMember);
         }
     }
 
     public List<PartyMember> GetPlayersOfJobType(JobType jobType) {
         return party.FindAll(existingMember => existingMember.JobType == jobType);
+    }
+
+    private unsafe int GetHudPlayersOfJobTypeCount(JobType jobType) {
+        List<HudPartyMember> hudPartyMembers = new List<HudPartyMember>(AgentHUD.Instance()->PartyMembers.ToArray());
+        return hudPartyMembers.FindAll(existingMember => existingMember.Object != null &&
+                                                         SortUtility.JobTypeDict[existingMember.Object->ClassJob] ==
+                                                         jobType).Count;
     }
 
     public int GetRegisteredPlayerCount() {
@@ -61,6 +97,11 @@ public class PartyManager {
             this.partyManager = partyManager;
             Players = new List<PartyMember>();
             PartyIndexDict = new Dictionary<JobType, int>();
+        }
+
+        public void InitLightParty() {
+            Players.Clear();
+            PartyIndexDict.Clear();
         }
 
         public void RegisterLightPartyMember(PartyMember partyMember) {

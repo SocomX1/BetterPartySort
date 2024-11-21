@@ -17,7 +17,7 @@ public sealed class Plugin : IDalamudPlugin {
     public readonly WindowSystem WindowSystem = new("BetterPartySort");
     private ConfigWindow ConfigWindow { get; init; }
     private MainWindow MainWindow { get; init; }
-    
+
     public readonly SortManager SortManager;
     public readonly PartyManager PartyManager;
 
@@ -51,6 +51,8 @@ public sealed class Plugin : IDalamudPlugin {
         // Adds another button that is doing the same but for the main ui of the plugin
         Dalamud.PluginInterface.UiBuilder.OpenMainUi += ToggleMainUI;
 
+        Dalamud.ClientState.TerritoryChanged += OnTerritoryChange;
+
         SortManager = new SortManager(this);
         PartyManager = new PartyManager();
     }
@@ -63,6 +65,8 @@ public sealed class Plugin : IDalamudPlugin {
 
         Dalamud.CommandManager.RemoveHandler(CommandName);
         Dalamud.CommandManager.RemoveHandler(SortCommandName);
+        
+        Dalamud.ClientState.TerritoryChanged -= OnTerritoryChange;
     }
 
     private void OnCommand(string command, string args) {
@@ -78,6 +82,10 @@ public sealed class Plugin : IDalamudPlugin {
                 Dalamud.Log(order.GetRoleByIndex(i).ToString());
             }
         }
+    }
+
+    private void OnTerritoryChange(ushort territoryId) {
+        PartyManager.InitParty();
     }
 
     private void DrawUI() => WindowSystem.Draw();

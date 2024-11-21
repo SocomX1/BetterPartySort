@@ -20,13 +20,10 @@ public class SortOptionsTab {
 
     public SortOptionsTab(Plugin plugin) {
         this.plugin = plugin;
+        this.plugin.PartyManager.PopulatePartyMembers();
     }
 
     public void Draw() {
-        if (plugin.PartyManager.GetRegisteredPlayerCount() != 8) {
-            plugin.PartyManager.PopulatePartyMembers();
-        }
-
         for (int i = 0; i < 8; i++) {
             var lightParty = i <= 3 ? plugin.PartyManager.LightParties[0] : plugin.PartyManager.LightParties[1];
 
@@ -34,16 +31,22 @@ public class SortOptionsTab {
             var playersOfJob = plugin.PartyManager.GetPlayersOfJobType(role.JobType);
             var playerNames = playersOfJob.ConvertAll(player => player.Name);
 
-            var currentIndex = lightParty.PartyIndexDict[role.JobType];
+            var currentIndex = -1;
+            if (lightParty.PartyIndexDict.TryGetValue(role.JobType, out int value)) {
+                currentIndex = value;
+            }
 
             if (ImGui.Combo(role.Name, ref currentIndex, playerNames.ToArray(), playerNames.Count)) {
-                var previousIndex = lightParty.PartyIndexDict[role.JobType];
-                lightParty.PartyIndexDict[role.JobType] = currentIndex;
-                if (previousIndex != currentIndex) {
-                    lightParty.UnregisterLightPartyMember(
-                        playersOfJob.Find(player => player.Name == playerNames[previousIndex]));
-                    lightParty.RegisterLightPartyMember(
-                        playersOfJob.Find(player => player.Name == playerNames[currentIndex]));
+                if (plugin.PartyManager.ValidatePartyComposition()) {
+                    var previousIndex = lightParty.PartyIndexDict[role.JobType];
+                    lightParty.PartyIndexDict[role.JobType] = currentIndex;
+
+                    if (previousIndex != currentIndex) {
+                        lightParty.UnregisterLightPartyMember(
+                            playersOfJob.Find(player => player.Name == playerNames[previousIndex]));
+                        lightParty.RegisterLightPartyMember(
+                            playersOfJob.Find(player => player.Name == playerNames[currentIndex]));
+                    }
                 }
             }
 
