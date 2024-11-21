@@ -12,7 +12,7 @@ public static class SortUtility {
     }
 
     //kill me
-    public static Dictionary<byte, JobType> JobTypeDict = new() {
+    public static readonly Dictionary<byte, JobType> JobTypeDict = new() {
         { 1, JobType.Tank },
         { 2, JobType.Melee },
         { 3, JobType.Tank },
@@ -56,7 +56,7 @@ public static class SortUtility {
 
         return 0;
     }
-
+    
     public static unsafe void UpdatePartyMemberIndex(byte originalIndex, byte newIndex) {
         var partyList = AgentHUD.Instance()->PartyMembers;
         for (int i = 0; i < partyList.Length; i++) {

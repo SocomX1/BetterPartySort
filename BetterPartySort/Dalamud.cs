@@ -31,6 +31,9 @@ public class Dalamud {
 
     [PluginService]
     public static IObjectTable ObjectTable { get; private set; } = null!;
+    
+    [PluginService]
+    public static IClientState ClientState { get; private set; } = null!;
 
     public static void Log(string message) {
         PluginLog.Info(message);

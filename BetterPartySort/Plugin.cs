@@ -9,6 +9,7 @@ using FFXIVClientStructs.FFXIV.Client.System.String;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Shell;
+using Lumina.Excel.Sheets;
 
 namespace BetterPartySort;
 
@@ -23,6 +24,8 @@ public sealed class Plugin : IDalamudPlugin {
     private MainWindow MainWindow { get; init; }
 
     public Dictionary<PartyRole, uint> partyDict;
+
+    public SortManager SortManager;
 
     public Plugin(IDalamudPluginInterface pluginInterface) {
         pluginInterface.Create<Dalamud>();
@@ -59,7 +62,15 @@ public sealed class Plugin : IDalamudPlugin {
         Dalamud.PluginInterface.UiBuilder.OpenMainUi += ToggleMainUI;
 
         partyDict = new Dictionary<PartyRole, uint>(8);
+        SortManager = new SortManager(this);
+        // Dalamud.ClientState.TerritoryChanged += OnTerritoryChange;
     }
+
+    // private unsafe void OnTerritoryChange(ushort territoryId) {
+    //     Dalamud.Log(AgentHUD.Instance()->PartyMemberCount.ToString());
+    //     if(AgentHUD.Instance()->PartyMembers.Length == 8)
+    //         Dalamud.Log(8 + " party members");
+    // }
 
     public void Dispose() {
         WindowSystem.RemoveAllWindows();
@@ -68,6 +79,7 @@ public sealed class Plugin : IDalamudPlugin {
         MainWindow.Dispose();
 
         Dalamud.CommandManager.RemoveHandler(CommandName);
+        // Dalamud.ClientState.TerritoryChanged -= OnTerritoryChange;
     }
 
     private void OnCommand(string command, string args) {
@@ -76,19 +88,14 @@ public sealed class Plugin : IDalamudPlugin {
         Dalamud.Log(Configuration.SomePropertyToBeSavedAndWithADefault.ToString());
     }
 
-    private unsafe void OnSortCommand(string command, string args) {
-        //SortParty(int.Parse(args));
+    private void OnSortCommand(string command, string args) {
+        //SortManager.PopulatePartyMembers();
+        SortManager.SortParty(int.Parse(args));
+
         foreach (var order in Configuration.PartyConfigurations) {
             Dalamud.Log("\n" + order.ConfigurationName);
             for (int i = 0; i < 8; i++) {
                 Dalamud.Log(order.GetRoleByIndex(i).ToString());
-            }
-        }
-
-        var party = AgentHUD.Instance()->PartyMembers;
-        for (int i = 0; i < party.Length; i++) {
-            if (party[i].Object != null) {
-                Dalamud.Log(party[i].Object->ClassJob + ", " + party[i].Object->NameString);
             }
         }
     }
@@ -99,32 +106,6 @@ public sealed class Plugin : IDalamudPlugin {
         partyDict.Add(role, AgentHUD.Instance()->CurrentTargetId);
     }
 
-
-    private unsafe void SortParty(int sortConfigIndex = 0) {
-        var partyList = AgentHUD.Instance()->PartyMembers;
-
-        PartyConfiguration partyConfig = Configuration.PartyConfigurations[sortConfigIndex];
-
-        for (int i = 0; i < partyList.Length; i++) {
-            Dalamud.Log(i + ": " + partyList[i].EntityId + ", " + partyList[i].Index);
-        }
-
-        for (int i = 0; i < 8; i++) {
-            var role = partyConfig.GetRoleByIndex(i);
-            var id = partyDict[role];
-            var targetIndex = SortUtility.GetIndexByEntityId(id);
-            string sortParams = "/psort " + (i + 1) + " " + (targetIndex + 1);
-
-
-            if (i != targetIndex) {
-                Dalamud.Log(sortParams + ": " + role + ", " + id + ", " + targetIndex);
-                SortUtility.UpdatePartyMemberIndex((byte)i, targetIndex);
-
-                RaptureShellModule.Instance()->ShellCommandModule.ExecuteCommandInner(
-                    Utf8String.FromString(sortParams), RaptureShellModule.Instance()->UIModule);
-            }
-        }
-    }
 
     private void DrawUI() => WindowSystem.Draw();
 
