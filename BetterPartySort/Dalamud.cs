@@ -34,7 +34,19 @@ public class Dalamud {
     
     [PluginService]
     public static IClientState ClientState { get; private set; } = null!;
+    
+    [PluginService]
+    public static IDutyState DutyState { get; private set; } = null!;
+    
+    [PluginService]
+    public static ICondition Condition { get; private set; } = null!;
 
+    [PluginService]
+    public static IGameInteropProvider GameInteropProvider { get; private set; } = null!;
+    
+    [PluginService]
+    public static IFramework Framework { get; private set; } = null!;
+    
     public static void Log(string message) {
         PluginLog.Info(message);
     }

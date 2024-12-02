@@ -1,6 +1,5 @@
 ﻿using System.IO;
 using BetterPartySort.Config;
-using BetterPartySort.Party;
 using BetterPartySort.Windows;
 using Dalamud.Game.Command;
 using Dalamud.Interface.Windowing;
@@ -16,23 +15,16 @@ public sealed class Plugin : IDalamudPlugin {
 
     public readonly WindowSystem WindowSystem = new("BetterPartySort");
     private ConfigWindow ConfigWindow { get; init; }
-    private MainWindow MainWindow { get; init; }
 
     public readonly SortManager SortManager;
-    public readonly PartyManager PartyManager;
 
     public Plugin(IDalamudPluginInterface pluginInterface) {
         pluginInterface.Create<Dalamud>();
         Configuration = Dalamud.PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
-
-        // you might normally want to embed resources and load them from the manifest stream
-        var goatImagePath = Path.Combine(Dalamud.PluginInterface.AssemblyLocation.Directory?.FullName!, "goat.png");
-
+        
         ConfigWindow = new ConfigWindow(this);
-        MainWindow = new MainWindow(this, goatImagePath);
 
         WindowSystem.AddWindow(ConfigWindow);
-        WindowSystem.AddWindow(MainWindow);
 
         Dalamud.CommandManager.AddHandler(CommandName, new CommandInfo(OnCommand) {
             HelpMessage = "Open the BetterPartySort menu."
@@ -49,47 +41,70 @@ public sealed class Plugin : IDalamudPlugin {
         Dalamud.PluginInterface.UiBuilder.OpenConfigUi += ToggleConfigUI;
 
         // Adds another button that is doing the same but for the main ui of the plugin
-        Dalamud.PluginInterface.UiBuilder.OpenMainUi += ToggleMainUI;
 
-        Dalamud.ClientState.TerritoryChanged += OnTerritoryChange;
+        // Dalamud.ClientState.TerritoryChanged += OnTerritoryChange;
 
         SortManager = new SortManager(this);
-        PartyManager = new PartyManager();
+
+        Dalamud.DutyState.DutyStarted += OnDutyCommence;
     }
+
+    private void OnDutyCommence(object? sender, ushort e) {
+        if (Configuration.SortOnDutyCommence) {
+            SortManager.SortParty();
+        }
+    }
+
+    // private void OnTerritoryChange(ushort territoryId) {
+    //     Dalamud.Condition.ConditionChange += OnConditionChange;
+    //     Dalamud.Log("Registering condition listener.");
+    // }
+    //
+    // private unsafe void OnConditionChange(ConditionFlag flag, bool value) {
+    //     var conditions = Dalamud.Condition.AsReadOnlySet().ToList();
+    //         // Dalamud.Log("---------------Begin condition list----------------");
+    //         // foreach (var condition in conditions) {
+    //         //     Dalamud.Log(condition.ToString());
+    //         // }
+    //         //
+    //     if (conditions.Count == 3 && conditions.Contains(ConditionFlag.NormalConditions) &&
+    //         conditions.Contains(ConditionFlag.BoundByDuty) && conditions.Contains(ConditionFlag.BoundByDuty56)) {
+    //         Dalamud.Log("Sorting party list and unregistering condition listener.");
+    //         var party = AgentHUD.Instance()->PartyMembers;
+    //         foreach (var player in party) {
+    //             if (player.Object != null) {
+    //                 Dalamud.Log(player.Object->NameString);
+    //             }
+    //         }
+    //         Dalamud.Condition.ConditionChange -= OnConditionChange;
+    //         SortManager.SortParty();
+    //     }
+    //     else if (conditions.Count == 1 && conditions.Contains(ConditionFlag.NormalConditions)) {
+    //         Dalamud.Condition.ConditionChange -= OnConditionChange;
+    //         Dalamud.Log("Unregistering condition listener.");
+    //     }
+    // }
 
     public void Dispose() {
         WindowSystem.RemoveAllWindows();
 
         ConfigWindow.Dispose();
-        MainWindow.Dispose();
 
         Dalamud.CommandManager.RemoveHandler(CommandName);
         Dalamud.CommandManager.RemoveHandler(SortCommandName);
-        
-        Dalamud.ClientState.TerritoryChanged -= OnTerritoryChange;
+
+        Dalamud.DutyState.DutyStarted -= OnDutyCommence;
     }
 
     private void OnCommand(string command, string args) {
-        ToggleMainUI();
+        ToggleConfigUI();
     }
 
     private void OnSortCommand(string command, string args) {
-        SortManager.SortParty(int.Parse(args));
-
-        foreach (var order in Configuration.PartyConfigurations) {
-            Dalamud.Log("\n" + order.ConfigurationName);
-            for (int i = 0; i < 8; i++) {
-                Dalamud.Log(order.GetRoleByIndex(i).ToString());
-            }
-        }
-    }
-
-    private void OnTerritoryChange(ushort territoryId) {
-        PartyManager.InitParty();
+        SortManager.SortParty();
     }
 
     private void DrawUI() => WindowSystem.Draw();
 
     public void ToggleConfigUI() => ConfigWindow.Toggle();
-    public void ToggleMainUI() => MainWindow.Toggle();
 }
