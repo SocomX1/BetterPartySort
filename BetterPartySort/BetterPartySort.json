@@ -1,14 +1,16 @@
-{
-    "Author": "Calypso",
-    "Name": "BetterPartySort",
-    "Punchline": "Allows the player to be automatically sorted within the party list.",
-    "Description": "Use the '/bsort' command to fully sort the party list. Automatic sorting of the party list can be disabled via the plugin settings menu.",
-    "ApplicableVersion": "any",
-    "Tags": [
-        "partylist",
-        "plugin"
-    ],
-    "DownloadLinkInstall": "https://github.com/SocomX1/BetterPartySort/releases/download/1.0.0/latest.zip",
-    "DownloadLinkUpdate": "https://github.com/SocomX1/BetterPartySort/releases/download/1.0.0/latest.zip",
-    "DownloadLinkTesting": "https://github.com/SocomX1/BetterPartySort/releases/download/1.0.0/latest.zip"
-}
+[
+    {
+        "Author": "Calypso",
+        "Name": "BetterPartySort",
+        "Punchline": "Allows the player to be automatically sorted within the party list.",
+        "Description": "Use the '/bsort' command to fully sort the party list. Automatic sorting of the party list can be disabled via the plugin settings menu.",
+        "ApplicableVersion": "any",
+        "Tags": [
+            "partylist",
+            "plugin"
+        ],
+        "DownloadLinkInstall": "https://github.com/SocomX1/BetterPartySort/releases/download/1.0.0/latest.zip",
+        "DownloadLinkUpdate": "https://github.com/SocomX1/BetterPartySort/releases/download/1.0.0/latest.zip",
+        "DownloadLinkTesting": "https://github.com/SocomX1/BetterPartySort/releases/download/1.0.0/latest.zip"
+    }
+]
